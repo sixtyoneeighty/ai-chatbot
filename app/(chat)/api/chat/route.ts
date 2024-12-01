@@ -248,7 +248,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    await deleteChatById(chatId);
+    await deleteChatById({ id: chatId });
     return new Response('OK');
   } catch (error) {
     console.error('Error deleting chat:', error);
