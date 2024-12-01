@@ -1,19 +1,16 @@
 // Define your models here.
 
-export interface Model {
-  id: string;
-  label: string;
-  apiIdentifier: string;
-  description: string;
-}
-
-export const models: Array<Model> = [
+export const models = [
   {
     id: 'gemini-1.5-pro',
-    label: 'Punk Rock Chatbot',
+    name: 'Gemini 1.5 Pro',
+    description: 'Most capable Gemini model for a wide range of tasks',
     apiIdentifier: 'gemini-1.5-pro',
-    description: 'The punkest chatbot you ever did see',
-  }
+    contextWindow: 32768,
+    maxTokens: 2048,
+  },
 ] as const;
+
+export type Model = (typeof models)[number];
 
 export const DEFAULT_MODEL_NAME: string = 'gemini-1.5-pro';

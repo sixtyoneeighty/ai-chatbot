@@ -45,6 +45,7 @@ export function MultimodalInput({
   handleSubmit,
   messages,
   append,
+  className,
 }: {
   chatId: string;
   input: string;
@@ -62,6 +63,7 @@ export function MultimodalInput({
     message: Message | CreateMessage,
     chatRequestOptions?: ChatRequestOptions,
   ) => Promise<string | null | undefined>;
+  className?: string;
 }) {
   const [placeholder] = useState(getRandomPlaceholder());
   const formRef = useRef<HTMLFormElement>(null);
@@ -190,7 +192,7 @@ export function MultimodalInput({
 
   return (
     <motion.div
-      className="fixed inset-x-0 bottom-0"
+      className={cx('fixed inset-x-0 bottom-0', className)}
       initial={{ y: 100 }}
       animate={{ y: 0 }}
     >

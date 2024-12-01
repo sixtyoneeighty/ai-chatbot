@@ -6,12 +6,10 @@ if (!process.env.GEMINI_API_KEY) {
 
 export const openai = new OpenAI({ 
   apiKey: process.env.GEMINI_API_KEY,
-  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+  baseURL: 'https://generativelanguage.googleapis.com/v1/models',
   defaultHeaders: {
     'Content-Type': 'application/json',
-  },
-  defaultQuery: {
-    key: process.env.GEMINI_API_KEY,
+    'x-goog-api-key': process.env.GEMINI_API_KEY,
   },
 });
 

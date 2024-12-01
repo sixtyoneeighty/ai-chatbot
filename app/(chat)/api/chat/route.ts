@@ -110,109 +110,74 @@ export async function POST(request: Request) {
             content: messages[messages.length - 1].content
           }
         ],
-        functions: [tavilyFunction],
         temperature: 0.7,
+        max_output_tokens: 1024,
+        stream: true,
+        tools: [
+          {
+            functionDeclarations: [tavilyFunction]
+          }
+        ]
       });
 
-      let searchResults = null;
-      const functionCall = searchCheckResponse.choices[0]?.message?.function_call;
+      // Get the response content
+      const searchCheckContent = await streamToString(searchCheckResponse.stream);
       
-      if (functionCall?.name === "tavily_search") {
-        try {
-          const args = JSON.parse(functionCall.arguments || "{}");
-          if (args.query) {
-            searchResults = await performTavilySearch(args);
-          }
-        } catch (searchError) {
-          console.error("Error in Tavily search:", searchError);
-          searchResults = null;
-        }
-      }
-
-      // Format messages for final response
-      const formattedMessages = [
-        { role: 'system', content: systemPrompt },
-        ...convertToCoreMessages(messages).map(msg => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-      ];
-
-      if (searchResults) {
-        formattedMessages.push({
-          role: 'assistant',
-          content: `Search Results:\n${JSON.stringify(searchResults, null, 2)}`,
+      // If search is needed, perform it
+      let searchResults = null;
+      if (searchCheckContent && !searchCheckContent.includes('no search needed')) {
+        searchResults = await performTavilySearch({
+          query: searchCheckContent,
+          includeDetails: true
         });
       }
 
+      // Now create the main chat completion
       const response = await openai.chat.completions.create({
         model: model.apiIdentifier,
-        messages: formattedMessages as any, // Need to cast since OpenAI expects different types
-        stream: true,
-        temperature: 0.9,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt + (searchResults ? `\nSearch results: ${JSON.stringify(searchResults)}` : '')
+          },
+          ...convertToCoreMessages(messages)
+        ],
+        temperature: 0.7,
+        max_output_tokens: 1024,
+        stream: true
       });
 
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        async start(controller) {
-          const chunks: Array<string> = [];
+      // Save messages to the database
+      const userMessage = messages[messages.length - 1];
+      if (userMessage && userMessage.role === 'user') {
+        await saveMessages([
+          {
+            id: generateUUID(),
+            chatId,
+            role: userMessage.role,
+            content: userMessage.content,
+            createdAt: new Date(),
+          },
+        ]);
 
-          try {
-            for await (const chunk of response) {
-              const content = chunk.choices[0]?.delta?.content || '';
-              if (content) {
-                chunks.push(content);
-                controller.enqueue(encoder.encode(content));
-              }
-            }
-
-            const fullResponse = chunks.join('');
-            await saveMessages({
-              messages: sanitizeResponseMessages([
-                ...messages,
-                { role: 'assistant', content: fullResponse },
-              ]).map(msg => ({
-                id: generateUUID(),
-                chatId,
-                role: msg.role,
-                content: msg.content,
-                createdAt: new Date(),
-              })),
+        // Generate and update chat title if it's the first message
+        if (messages.length === 1) {
+          const title = await generateTitleFromUserMessage(userMessage.content);
+          if (title && session?.user?.id) {
+            await saveChat({
+              id: chatId,
+              title,
+              userId: session.user.id,
             });
-
-            if (!title) {
-              const mostRecentUserMessage = getMostRecentUserMessage(messages);
-              if (mostRecentUserMessage?.content && session?.user?.id) {
-                const messageContent = typeof mostRecentUserMessage.content === 'string' 
-                  ? mostRecentUserMessage.content 
-                  : JSON.stringify(mostRecentUserMessage.content);
-
-                const generatedTitle = await generateTitleFromUserMessage({
-                  message: {
-                    content: messageContent,
-                    role: mostRecentUserMessage.role,
-                  },
-                });
-
-                await saveChat({
-                  id: chatId,
-                  title: generatedTitle,
-                  userId: session.user.id,
-                });
-              }
-            }
-          } catch (error) {
-            console.error('Error in stream processing:', error);
-            controller.error(error);
-          } finally {
-            controller.close();
           }
-        },
-      });
+        }
+      }
 
-      return new Response(stream, {
+      return new Response(response.body, {
         headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
         },
       });
     } catch (error) {
