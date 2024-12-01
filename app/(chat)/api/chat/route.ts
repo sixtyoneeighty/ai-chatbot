@@ -140,15 +140,14 @@ export async function POST(request: Request) {
 
       if (searchResults) {
         formattedMessages.push({
-          role: 'tool',
-          tool_call_id: 'tavily_search_0',
-          content: JSON.stringify(searchResults),
+          role: 'assistant',
+          content: `Search Results:\n${JSON.stringify(searchResults, null, 2)}`,
         });
       }
 
       const response = await openai.chat.completions.create({
         model: model.apiIdentifier,
-        messages: formattedMessages,
+        messages: formattedMessages as any, // Need to cast since OpenAI expects different types
         stream: true,
         temperature: 0.9,
       });
