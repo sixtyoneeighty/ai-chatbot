@@ -9,7 +9,7 @@ export default async function Page() {
       key={id}
       id={id}
       initialMessages={[]}
-      selectedModelId="gpt-4"
+      selectedModelId="gemini-1.5-pro"
     />
   );
 }

@@ -58,7 +58,10 @@ export function MultimodalInput({
     options?: ChatRequestOptions | undefined,
   ) => void;
   messages: Message[];
-  append: (message: CreateMessage) => Promise<void>;
+  append: (
+    message: Message | CreateMessage,
+    chatRequestOptions?: ChatRequestOptions,
+  ) => Promise<string | null | undefined>;
 }) {
   const [placeholder] = useState(getRandomPlaceholder());
   const formRef = useRef<HTMLFormElement>(null);
