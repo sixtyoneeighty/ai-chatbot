@@ -182,12 +182,10 @@ export async function POST(request: Request) {
 
             if (!title) {
               const mostRecentUserMessage = getMostRecentUserMessage(messages);
-              if (mostRecentUserMessage) {
-                const messageContent = Array.isArray(mostRecentUserMessage.content)
-                  ? mostRecentUserMessage.content
-                      .map(part => (typeof part === 'string' ? part : part.type === 'text' ? part.value : ''))
-                      .join(' ')
-                  : String(mostRecentUserMessage.content);
+              if (mostRecentUserMessage?.content) {
+                const messageContent = typeof mostRecentUserMessage.content === 'string' 
+                  ? mostRecentUserMessage.content 
+                  : JSON.stringify(mostRecentUserMessage.content);
 
                 const generatedTitle = await generateTitleFromUserMessage({
                   message: {
