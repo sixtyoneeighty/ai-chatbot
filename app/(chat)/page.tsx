@@ -1,6 +1,5 @@
 import { Chat } from '@/components/chat';
 import { generateUUID } from '@/lib/utils';
-import { Message } from '@/components/message';
 import { PunkMessage, PunkContainer, PunkInput } from '@/components/chat/punk-theme';
 import { useChat } from 'ai/react';
 
