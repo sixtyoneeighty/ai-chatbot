@@ -141,8 +141,10 @@ export async function POST(request: Request) {
       if (searchResults) {
         formattedMessages.push({
           role: 'function',
-          name: 'tavily_search',
-          content: JSON.stringify(searchResults),
+          content: JSON.stringify({
+            name: 'tavily_search',
+            content: searchResults
+          }),
         });
       }
 
