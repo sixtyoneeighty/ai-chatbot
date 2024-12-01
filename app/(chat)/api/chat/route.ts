@@ -217,11 +217,15 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       console.error('Error in chat processing:', error);
-      if (error.response?.status === 429) {
+      
+      // Check if error is an OpenAI API error
+      const err = error as { response?: { status: number }; message?: string };
+      if (err.response?.status === 429) {
         return new Response('Rate limit exceeded. Please try again later.', { status: 429 });
       }
-      return new Response(error.message || 'Error processing chat', { 
-        status: error.response?.status || 500 
+
+      return new Response(err.message || 'Error processing chat', { 
+        status: 500,
       });
     }
   } catch (error) {
