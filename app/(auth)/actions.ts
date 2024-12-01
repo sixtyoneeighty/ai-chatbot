@@ -13,6 +13,7 @@ const authFormSchema = z.object({
 
 export interface LoginActionState {
   status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data';
+  error: string | null;
 }
 
 export const login = async (
@@ -31,13 +32,13 @@ export const login = async (
       redirect: false,
     });
 
-    return { status: 'success' };
+    return { status: 'success', error: null };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { status: 'invalid_data' };
+      return { status: 'invalid_data', error: 'Invalid email or password format' };
     }
 
-    return { status: 'failed' };
+    return { status: 'failed', error: 'Invalid credentials' };
   }
 };
 
@@ -49,6 +50,7 @@ export interface RegisterActionState {
     | 'failed'
     | 'user_exists'
     | 'invalid_data';
+  error: string | null;
 }
 
 export const register = async (
@@ -64,7 +66,7 @@ export const register = async (
     const [user] = await getUser(validatedData.email);
 
     if (user) {
-      return { status: 'user_exists' } as RegisterActionState;
+      return { status: 'user_exists', error: 'Account already exists' } as RegisterActionState;
     }
     await createUser(validatedData.email, validatedData.password);
     await signIn('credentials', {
@@ -73,12 +75,12 @@ export const register = async (
       redirect: false,
     });
 
-    return { status: 'success' };
+    return { status: 'success', error: null };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { status: 'invalid_data' };
+      return { status: 'invalid_data', error: 'Invalid email or password format' };
     }
 
-    return { status: 'failed' };
+    return { status: 'failed', error: 'Failed to create account' };
   }
 };

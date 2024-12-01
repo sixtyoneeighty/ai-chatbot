@@ -20,6 +20,7 @@ export default function Page() {
   const [state, formAction] = useFormState<RegisterActionState, FormData>(
     register,
     {
+      status: 'idle',
       error: null,
     }
   );
@@ -28,7 +29,11 @@ export default function Page() {
     if (state?.error) {
       toast.error(state.error);
     }
-  }, [state?.error]);
+    if (state?.status === 'success') {
+      toast.success('Account created successfully');
+      setIsSuccessful(true);
+    }
+  }, [state]);
 
   useEffect(() => {
     if (isSuccessful) {

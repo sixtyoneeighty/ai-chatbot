@@ -18,6 +18,7 @@ export default function Page() {
   const [isSuccessful, setIsSuccessful] = useState(false);
 
   const [state, formAction] = useFormState<LoginActionState, FormData>(login, {
+    status: 'idle',
     error: null,
   });
 
@@ -25,7 +26,10 @@ export default function Page() {
     if (state?.error) {
       toast.error(state.error);
     }
-  }, [state?.error]);
+    if (state?.status === 'success') {
+      setIsSuccessful(true);
+    }
+  }, [state]);
 
   useEffect(() => {
     if (isSuccessful) {
@@ -46,7 +50,6 @@ export default function Page() {
           action={async (formData) => {
             await formAction(formData);
             setEmail(formData.get('email') as string);
-            setIsSuccessful(true);
           }}
         >
           <SubmitButton isSuccessful={isSuccessful}>Sign in</SubmitButton>
