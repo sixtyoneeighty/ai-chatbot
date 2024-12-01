@@ -22,24 +22,17 @@ import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 
 import { sanitizeUIMessages } from '@/lib/utils';
+import { punkSuggestedActions, punkPlaceholders } from '@/lib/constants';
 
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 
-const suggestedActions = [
-  {
-    title: 'What is the weather',
-    label: 'in San Francisco?',
-    action: 'What is the weather in San Francisco?',
-  },
-  {
-    title: 'Help me draft an essay',
-    label: 'about Silicon Valley',
-    action: 'Help me draft a short essay about Silicon Valley',
-  },
-];
+const getRandomPlaceholder = () => {
+  const index = Math.floor(Math.random() * punkPlaceholders.length);
+  return punkPlaceholders[index];
+};
 
 export function MultimodalInput({
   chatId,
@@ -49,35 +42,31 @@ export function MultimodalInput({
   stop,
   attachments,
   setAttachments,
-  messages,
-  setMessages,
-  append,
   handleSubmit,
-  className,
+  messages,
+  append,
 }: {
   chatId: string;
   input: string;
   setInput: (value: string) => void;
   isLoading: boolean;
   stop: () => void;
-  attachments: Array<Attachment>;
-  setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
-  messages: Array<Message>;
-  setMessages: Dispatch<SetStateAction<Array<Message>>>;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  attachments?: Attachment[];
+  setAttachments?: Dispatch<SetStateAction<Attachment[]>>;
   handleSubmit: (
-    event?: {
-      preventDefault?: () => void;
-    },
-    chatRequestOptions?: ChatRequestOptions,
+    e: React.FormEvent<HTMLFormElement>,
+    options?: ChatRequestOptions | undefined,
   ) => void;
-  className?: string;
+  messages: Message[];
+  append: (message: CreateMessage) => Promise<void>;
 }) {
+  const [placeholder] = useState(getRandomPlaceholder());
+  const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { width: windowWidth = 1920, height: windowHeight = 1080 } =
+    useWindowSize();
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { width } = useWindowSize();
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -131,7 +120,7 @@ export function MultimodalInput({
     setAttachments([]);
     setLocalStorageInput('');
 
-    if (width && width > 768) {
+    if (windowWidth && windowWidth > 768) {
       textareaRef.current?.focus();
     }
   }, [
@@ -139,7 +128,7 @@ export function MultimodalInput({
     handleSubmit,
     setAttachments,
     setLocalStorageInput,
-    width,
+    windowWidth,
     chatId,
   ]);
 
@@ -197,130 +186,88 @@ export function MultimodalInput({
   );
 
   return (
-    <div className="relative w-full flex flex-col gap-4">
-      {messages.length === 0 &&
-        attachments.length === 0 &&
-        uploadQueue.length === 0 && (
-          <div className="grid sm:grid-cols-2 gap-2 w-full">
-            {suggestedActions.map((suggestedAction, index) => (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ delay: 0.05 * index }}
-                key={`suggested-action-${suggestedAction.title}-${index}`}
-                className={index > 1 ? 'hidden sm:block' : 'block'}
+    <motion.div
+      className="fixed inset-x-0 bottom-0"
+      initial={{ y: 100 }}
+      animate={{ y: 0 }}
+    >
+      <div className="mx-auto sm:max-w-2xl sm:px-4">
+        <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+          >
+            <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background pr-8">
+              <Textarea
+                ref={inputRef}
+                tabIndex={0}
+                rows={1}
+                value={input}
+                onChange={handleInput}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+
+                    if (isLoading) {
+                      toast.error('Please wait for the model to finish its response!');
+                    } else {
+                      submitForm();
+                    }
+                  }
+                }}
+                placeholder={placeholder}
+                spellCheck={false}
+                className="min-h-[60px] w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm"
+                autoFocus
+              />
+              <div
+                className={cx('absolute right-0 top-4 sm:right-4', {
+                  'cursor-not-allowed opacity-50': isLoading,
+                })}
               >
                 <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isLoading || input === ''}
                   variant="ghost"
-                  onClick={async () => {
-                    window.history.replaceState({}, '', `/chat/${chatId}`);
-
-                    append({
-                      role: 'user',
-                      content: suggestedAction.action,
-                    });
-                  }}
-                  className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
                 >
-                  <span className="font-medium">{suggestedAction.title}</span>
-                  <span className="text-muted-foreground">
-                    {suggestedAction.label}
-                  </span>
+                  <ArrowUpIcon className="h-5 w-5" />
                 </Button>
-              </motion.div>
-            ))}
-          </div>
-        )}
+              </div>
+            </div>
+          </form>
 
-      <input
-        type="file"
-        className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
-        ref={fileInputRef}
-        multiple
-        onChange={handleFileChange}
-        tabIndex={-1}
-      />
-
-      {(attachments.length > 0 || uploadQueue.length > 0) && (
-        <div className="flex flex-row gap-2 overflow-x-scroll items-end">
-          {attachments.map((attachment) => (
-            <PreviewAttachment key={attachment.url} attachment={attachment} />
-          ))}
-
-          {uploadQueue.map((filename) => (
-            <PreviewAttachment
-              key={filename}
-              attachment={{
-                url: '',
-                name: filename,
-                contentType: '',
-              }}
-              isUploading={true}
-            />
-          ))}
+          {messages.length === 0 && (
+            <div className="mx-auto max-w-2xl px-4">
+              <div className="rounded-lg border bg-background p-8">
+                <h1 className="mb-2 text-lg font-semibold">
+                  Welcome to RIOT BOT
+                </h1>
+                <p className="mb-2 leading-normal text-muted-foreground">
+                  Your snarky guide to the underground punk scene. I've got encyclopedic knowledge of indie labels, rare releases, and which bands sold out. Try asking about:
+                </p>
+                <div className="mt-4 flex flex-col items-start space-y-2">
+                  {punkSuggestedActions.map((action) => (
+                    <Button
+                      key={action.action}
+                      variant="link"
+                      className="h-auto p-0 text-base"
+                      onClick={() => {
+                        setInput(action.action);
+                      }}
+                    >
+                      <span className="text-primary">{action.title}</span>{' '}
+                      <span className="text-muted-foreground">
+                        {action.label}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-
-      <Textarea
-        ref={textareaRef}
-        placeholder="Send a message..."
-        value={input}
-        onChange={handleInput}
-        className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl text-base bg-muted',
-          className,
-        )}
-        rows={3}
-        autoFocus
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-
-            if (isLoading) {
-              toast.error('Please wait for the model to finish its response!');
-            } else {
-              submitForm();
-            }
-          }
-        }}
-      />
-
-      {isLoading ? (
-        <Button
-          className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 border dark:border-zinc-600"
-          onClick={(event) => {
-            event.preventDefault();
-            stop();
-            setMessages((messages) => sanitizeUIMessages(messages));
-          }}
-        >
-          <StopIcon size={14} />
-        </Button>
-      ) : (
-        <Button
-          className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 border dark:border-zinc-600"
-          onClick={(event) => {
-            event.preventDefault();
-            submitForm();
-          }}
-          disabled={input.length === 0 || uploadQueue.length > 0}
-        >
-          <ArrowUpIcon size={14} />
-        </Button>
-      )}
-
-      <Button
-        className="rounded-full p-1.5 h-fit absolute bottom-2 right-11 m-0.5 dark:border-zinc-700"
-        onClick={(event) => {
-          event.preventDefault();
-          fileInputRef.current?.click();
-        }}
-        variant="outline"
-        disabled={isLoading}
-      >
-        <PaperclipIcon size={14} />
-      </Button>
-    </div>
+      </div>
+    </motion.div>
   );
 }

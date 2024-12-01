@@ -2,25 +2,21 @@ import {
   type Message,
   StreamData,
   convertToCoreMessages,
-  streamObject,
-  streamText,
 } from 'ai';
 import { z } from 'zod';
 
 import { auth } from '@/app/(auth)/auth';
-import { customModel } from '@/lib/ai';
+import { openai } from '@/lib/ai';
 import { models } from '@/lib/ai/models';
 import { systemPrompt } from '@/lib/ai/prompts';
+import { TavilySearchAPI } from '@/lib/tavily';
+import { TavilySearchAPIParameters } from '@/lib/types';
 import {
   deleteChatById,
   getChatById,
-  getDocumentById,
   saveChat,
-  saveDocument,
   saveMessages,
-  saveSuggestions,
 } from '@/lib/db/queries';
-import type { Suggestion } from '@/lib/db/schema';
 import {
   generateUUID,
   getMostRecentUserMessage,
@@ -29,375 +25,217 @@ import {
 
 import { generateTitleFromUserMessage } from '../../actions';
 
-export const maxDuration = 60;
+// Initialize Tavily client
+const tavily = new TavilySearchAPI(process.env.TAVILY_API_KEY || '');
 
-type AllowedTools =
-  | 'createDocument'
-  | 'updateDocument'
-  | 'requestSuggestions'
-  | 'getWeather';
-
-const blocksTools: AllowedTools[] = [
-  'createDocument',
-  'updateDocument',
-  'requestSuggestions',
-];
-
-const weatherTools: AllowedTools[] = ['getWeather'];
-
-const allTools: AllowedTools[] = [...blocksTools, ...weatherTools];
-
-export async function POST(request: Request) {
-  const {
-    id,
-    messages,
-    modelId,
-  }: { id: string; messages: Array<Message>; modelId: string } =
-    await request.json();
-
-  const session = await auth();
-
-  if (!session || !session.user || !session.user.id) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const model = models.find((model) => model.id === modelId);
-
-  if (!model) {
-    return new Response('Model not found', { status: 404 });
-  }
-
-  const coreMessages = convertToCoreMessages(messages);
-  const userMessage = getMostRecentUserMessage(coreMessages);
-
-  if (!userMessage) {
-    return new Response('No user message found', { status: 400 });
-  }
-
-  const chat = await getChatById({ id });
-
-  if (!chat) {
-    const title = await generateTitleFromUserMessage({ message: userMessage });
-    await saveChat({ id, userId: session.user.id, title });
-  }
-
-  await saveMessages({
-    messages: [
-      { ...userMessage, id: generateUUID(), createdAt: new Date(), chatId: id },
-    ],
-  });
-
-  const streamingData = new StreamData();
-
-  const result = await streamText({
-    model: customModel(model.apiIdentifier),
-    system: systemPrompt,
-    messages: coreMessages,
-    maxSteps: 5,
-    experimental_activeTools: allTools,
-    tools: {
-      getWeather: {
-        description: 'Get the current weather at a location',
-        parameters: z.object({
-          latitude: z.number(),
-          longitude: z.number(),
-        }),
-        execute: async ({ latitude, longitude }) => {
-          const response = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m&hourly=temperature_2m&daily=sunrise,sunset&timezone=auto`,
-          );
-
-          const weatherData = await response.json();
-          return weatherData;
-        },
+// Define Tavily function schema
+const tavilyFunction = {
+  name: "tavily_search",
+  description: "Search for the latest music news, band updates, and punk rock history.",
+  parameters: {
+    type: "object",
+    properties: {
+      query: { 
+        type: "string", 
+        description: "The search query about music, bands, or punk rock culture." 
       },
-      createDocument: {
-        description: 'Create a document for a writing activity',
-        parameters: z.object({
-          title: z.string(),
-        }),
-        execute: async ({ title }) => {
-          const id = generateUUID();
-          let draftText = '';
-
-          streamingData.append({
-            type: 'id',
-            content: id,
-          });
-
-          streamingData.append({
-            type: 'title',
-            content: title,
-          });
-
-          streamingData.append({
-            type: 'clear',
-            content: '',
-          });
-
-          const { fullStream } = await streamText({
-            model: customModel(model.apiIdentifier),
-            system:
-              'Write about the given topic. Markdown is supported. Use headings wherever appropriate.',
-            prompt: title,
-          });
-
-          for await (const delta of fullStream) {
-            const { type } = delta;
-
-            if (type === 'text-delta') {
-              const { textDelta } = delta;
-
-              draftText += textDelta;
-              streamingData.append({
-                type: 'text-delta',
-                content: textDelta,
-              });
-            }
-          }
-
-          streamingData.append({ type: 'finish', content: '' });
-
-          if (session.user?.id) {
-            await saveDocument({
-              id,
-              title,
-              content: draftText,
-              userId: session.user.id,
-            });
-          }
-
-          return {
-            id,
-            title,
-            content: 'A document was created and is now visible to the user.',
-          };
-        },
-      },
-      updateDocument: {
-        description: 'Update a document with the given description',
-        parameters: z.object({
-          id: z.string().describe('The ID of the document to update'),
-          description: z
-            .string()
-            .describe('The description of changes that need to be made'),
-        }),
-        execute: async ({ id, description }) => {
-          const document = await getDocumentById({ id });
-
-          if (!document) {
-            return {
-              error: 'Document not found',
-            };
-          }
-
-          const { content: currentContent } = document;
-          let draftText = '';
-
-          streamingData.append({
-            type: 'clear',
-            content: document.title,
-          });
-
-          const { fullStream } = await streamText({
-            model: customModel(model.apiIdentifier),
-            system:
-              'You are a helpful writing assistant. Based on the description, please update the piece of writing.',
-            experimental_providerMetadata: {
-              openai: {
-                prediction: {
-                  type: 'content',
-                  content: currentContent,
-                },
-              },
-            },
-            messages: [
-              {
-                role: 'user',
-                content: description,
-              },
-              { role: 'user', content: currentContent },
-            ],
-          });
-
-          for await (const delta of fullStream) {
-            const { type } = delta;
-
-            if (type === 'text-delta') {
-              const { textDelta } = delta;
-
-              draftText += textDelta;
-              streamingData.append({
-                type: 'text-delta',
-                content: textDelta,
-              });
-            }
-          }
-
-          streamingData.append({ type: 'finish', content: '' });
-
-          if (session.user?.id) {
-            await saveDocument({
-              id,
-              title: document.title,
-              content: draftText,
-              userId: session.user.id,
-            });
-          }
-
-          return {
-            id,
-            title: document.title,
-            content: 'The document has been updated successfully.',
-          };
-        },
-      },
-      requestSuggestions: {
-        description: 'Request suggestions for a document',
-        parameters: z.object({
-          documentId: z
-            .string()
-            .describe('The ID of the document to request edits'),
-        }),
-        execute: async ({ documentId }) => {
-          const document = await getDocumentById({ id: documentId });
-
-          if (!document || !document.content) {
-            return {
-              error: 'Document not found',
-            };
-          }
-
-          const suggestions: Array<
-            Omit<Suggestion, 'userId' | 'createdAt' | 'documentCreatedAt'>
-          > = [];
-
-          const { elementStream } = await streamObject({
-            model: customModel(model.apiIdentifier),
-            system:
-              'You are a help writing assistant. Given a piece of writing, please offer suggestions to improve the piece of writing and describe the change. It is very important for the edits to contain full sentences instead of just words. Max 5 suggestions.',
-            prompt: document.content,
-            output: 'array',
-            schema: z.object({
-              originalSentence: z.string().describe('The original sentence'),
-              suggestedSentence: z.string().describe('The suggested sentence'),
-              description: z
-                .string()
-                .describe('The description of the suggestion'),
-            }),
-          });
-
-          for await (const element of elementStream) {
-            const suggestion = {
-              originalText: element.originalSentence,
-              suggestedText: element.suggestedSentence,
-              description: element.description,
-              id: generateUUID(),
-              documentId: documentId,
-              isResolved: false,
-            };
-
-            streamingData.append({
-              type: 'suggestion',
-              content: suggestion,
-            });
-
-            suggestions.push(suggestion);
-          }
-
-          if (session.user?.id) {
-            const userId = session.user.id;
-
-            await saveSuggestions({
-              suggestions: suggestions.map((suggestion) => ({
-                ...suggestion,
-                userId,
-                createdAt: new Date(),
-                documentCreatedAt: document.createdAt,
-              })),
-            });
-          }
-
-          return {
-            id: documentId,
-            title: document.title,
-            message: 'Suggestions have been added to the document',
-          };
-        },
+      includeDetails: {
+        type: "boolean",
+        description: "Whether to include detailed results.",
+        default: false,
       },
     },
-    onFinish: async ({ responseMessages }) => {
-      if (session.user?.id) {
-        try {
-          const responseMessagesWithoutIncompleteToolCalls =
-            sanitizeResponseMessages(responseMessages);
+    required: ["query"],
+  },
+};
 
-          await saveMessages({
-            messages: responseMessagesWithoutIncompleteToolCalls.map(
-              (message) => {
-                const messageId = generateUUID();
-
-                if (message.role === 'assistant') {
-                  streamingData.appendMessageAnnotation({
-                    messageIdFromServer: messageId,
-                  });
-                }
-
-                return {
-                  id: messageId,
-                  chatId: id,
-                  role: message.role,
-                  content: message.content,
-                  createdAt: new Date(),
-                };
-              },
-            ),
-          });
-        } catch (error) {
-          console.error('Failed to save chat');
-        }
-      }
-
-      streamingData.close();
-    },
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: 'stream-text',
-    },
-  });
-
-  return result.toDataStreamResponse({
-    data: streamingData,
-  });
+// Tavily search function
+async function performTavilySearch(args: TavilySearchAPIParameters) {
+  try {
+    const results = await tavily.search(args);
+    return results;
+  } catch (error) {
+    console.error("Tavily search error:", error);
+    return {
+      results: [],
+      answer: "Search failed, but I'll work with what I know.",
+      query: args.query
+    };
+  }
 }
 
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+export const maxDuration = 300;
 
-  if (!id) {
-    return new Response('Not Found', { status: 404 });
-  }
-
-  const session = await auth();
-
-  if (!session || !session.user) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
+export async function POST(request: Request) {
   try {
-    const chat = await getChatById({ id });
+    const json = await request.json();
+    const { messages, modelId } = json;
 
-    if (chat.userId !== session.user.id) {
+    const session = await auth();
+    if (!session?.user) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    await deleteChatById({ id });
+    const model = models.find((m) => m.id === modelId);
+    if (!model) {
+      return new Response('Model not found', { status: 404 });
+    }
 
-    return new Response('Chat deleted', { status: 200 });
+    const chatId = json.id ?? generateUUID();
+    const title = json.title ?? null;
+
+    try {
+      const chat = await getChatById(chatId);
+      if (!chat) {
+        await saveChat({
+          id: chatId,
+          title: title ?? undefined,
+          userId: session.user.id,
+          createdAt: new Date(),
+        });
+      }
+
+      // First, check if we need to search
+      const searchCheckResponse = await openai.chat.completions.create({
+        model: model.apiIdentifier,
+        messages: [
+          {
+            role: "system",
+            content: "You are a punk rock expert. If the user's question might benefit from real-time information (like recent news, tour dates, or releases), respond with a search query. Otherwise, respond with 'no search needed'."
+          },
+          {
+            role: "user",
+            content: messages[messages.length - 1].content
+          }
+        ],
+        functions: [tavilyFunction],
+        temperature: 0.7,
+      });
+
+      let searchResults = null;
+      const functionCall = searchCheckResponse.choices[0]?.message?.function_call;
+      
+      if (functionCall?.name === "tavily_search") {
+        try {
+          const args = JSON.parse(functionCall.arguments || "{}");
+          if (args.query) {
+            searchResults = await performTavilySearch(args);
+          }
+        } catch (searchError) {
+          console.error("Error in Tavily search:", searchError);
+          searchResults = null;
+        }
+      }
+
+      // Format messages for final response
+      const formattedMessages = [
+        { role: 'system', content: systemPrompt },
+        ...convertToCoreMessages(messages).map(msg => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+      ];
+
+      if (searchResults) {
+        formattedMessages.push({
+          role: 'function',
+          name: 'tavily_search',
+          content: JSON.stringify(searchResults),
+        });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: model.apiIdentifier,
+        messages: formattedMessages,
+        stream: true,
+        temperature: 0.9,
+      });
+
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          const chunks: Array<string> = [];
+
+          try {
+            for await (const chunk of response) {
+              const content = chunk.choices[0]?.delta?.content || '';
+              if (content) {
+                chunks.push(content);
+                controller.enqueue(encoder.encode(content));
+              }
+            }
+
+            const fullResponse = chunks.join('');
+            await saveMessages(
+              chatId,
+              sanitizeResponseMessages([
+                ...messages,
+                { role: 'assistant', content: fullResponse },
+              ])
+            );
+
+            if (!title) {
+              const mostRecentUserMessage = getMostRecentUserMessage(messages);
+              if (mostRecentUserMessage) {
+                const generatedTitle = await generateTitleFromUserMessage({
+                  message: mostRecentUserMessage,
+                });
+
+                await saveChat({
+                  id: chatId,
+                  title: generatedTitle,
+                  userId: session.user.id,
+                  createdAt: new Date(),
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Error in stream processing:', error);
+            controller.error(error);
+          } finally {
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      });
+    } catch (error) {
+      console.error('Error in chat processing:', error);
+      if (error.response?.status === 429) {
+        return new Response('Rate limit exceeded. Please try again later.', { status: 429 });
+      }
+      return new Response(error.message || 'Error processing chat', { 
+        status: error.response?.status || 500 
+      });
+    }
   } catch (error) {
-    return new Response('An error occurred while processing your request', {
-      status: 500,
-    });
+    console.error('Error parsing request:', error);
+    return new Response('Invalid request format', { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const chatId = searchParams.get('id');
+
+  if (!chatId) {
+    return new Response('Missing chat ID', { status: 400 });
+  }
+
+  try {
+    await deleteChatById(chatId);
+    return new Response('OK');
+  } catch (error) {
+    console.error('Error deleting chat:', error);
+    return new Response('Error deleting chat', { status: 500 });
   }
 }
