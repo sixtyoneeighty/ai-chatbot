@@ -92,9 +92,8 @@ export async function POST(request: Request) {
         }
         await saveChat({
           id: chatId,
-          title: title ?? undefined,
+          title: title ?? 'New Chat',
           userId: session.user.id,
-          createdAt: new Date(),
         });
       }
 
@@ -188,7 +187,6 @@ export async function POST(request: Request) {
                   id: chatId,
                   title: generatedTitle,
                   userId: session.user.id,
-                  createdAt: new Date(),
                 });
               }
             }
