@@ -182,7 +182,7 @@ export async function POST(request: Request) {
 
             if (!title) {
               const mostRecentUserMessage = getMostRecentUserMessage(messages);
-              if (mostRecentUserMessage?.content) {
+              if (mostRecentUserMessage?.content && session?.user?.id) {
                 const messageContent = typeof mostRecentUserMessage.content === 'string' 
                   ? mostRecentUserMessage.content 
                   : JSON.stringify(mostRecentUserMessage.content);
