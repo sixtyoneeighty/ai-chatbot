@@ -167,13 +167,16 @@ export async function POST(request: Request) {
             }
 
             const fullResponse = chunks.join('');
-            await saveMessages(
-              chatId,
-              sanitizeResponseMessages([
+            await saveMessages({
+              messages: sanitizeResponseMessages([
                 ...messages,
                 { role: 'assistant', content: fullResponse },
-              ])
-            );
+              ]).map(msg => ({
+                ...msg,
+                chatId,
+                createdAt: new Date(),
+              })),
+            });
 
             if (!title) {
               const mostRecentUserMessage = getMostRecentUserMessage(messages);
