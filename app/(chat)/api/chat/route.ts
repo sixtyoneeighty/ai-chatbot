@@ -172,8 +172,10 @@ export async function POST(request: Request) {
                 ...messages,
                 { role: 'assistant', content: fullResponse },
               ]).map(msg => ({
-                ...msg,
+                id: generateUUID(),
                 chatId,
+                role: msg.role,
+                content: msg.content,
                 createdAt: new Date(),
               })),
             });
