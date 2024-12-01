@@ -87,6 +87,9 @@ export async function POST(request: Request) {
     try {
       const chat = await getChatById(chatId);
       if (!chat) {
+        if (!session?.user?.id) {
+          return new Response('Unauthorized', { status: 401 });
+        }
         await saveChat({
           id: chatId,
           title: title ?? undefined,
