@@ -19,8 +19,9 @@ export function ModelSelector({
   selectedModelId,
   className,
 }: {
-  selectedModelId: string;
-} & React.ComponentProps<typeof Button>) {
+  selectedModelId?: string;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
