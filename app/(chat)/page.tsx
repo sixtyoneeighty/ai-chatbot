@@ -17,11 +17,14 @@ export default async function ChatPage() {
 
   const id = generateUUID();
 
-  const cookieStore = cookies();
-  const modelIdFromCookie = cookieStore.get('model-id')?.value;
-  const selectedModelId =
-    modelsList.find((model) => model.id === modelIdFromCookie)?.id ||
-    DEFAULT_MODEL_NAME;
+  // Get model from cookie or use default
+  const modelIdFromCookie = cookies().has('model-id') 
+    ? cookies().get('model-id')?.value 
+    : null;
+    
+  const selectedModelId = modelsList.find(
+    (model) => model.id === modelIdFromCookie
+  )?.id || DEFAULT_MODEL_NAME;
 
   return (
     <ChatWrapper
