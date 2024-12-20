@@ -1,12 +1,8 @@
-import { Message, convertToCoreMessages, streamText } from 'ai';
+import { Message, convertToCoreMessages } from 'ai';
 import { tavily } from '@tavily/core';
 import { auth } from '@/app/(auth)/auth';
-import { model } from '@/lib/ai/models';
 import { systemPrompt } from '@/lib/ai/prompts';
 import { google } from '@ai-sdk/google';
-import { generateUUID } from '@/lib/utils';
-import { saveChat, saveMessages, getChatById, deleteChatById } from '@/lib/db/queries';
-import { generateTitleFromUserMessage } from '../../actions';
 
 // Initialize Tavily
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY! });
@@ -22,15 +18,24 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const { messages, modelId } = await req.json();
+  const { messages } = await req.json();
   const coreMessages = convertToCoreMessages(messages);
 
   try {
     // Get real-time information using Tavily
     const lastMessage = messages[messages.length - 1].content;
-    const searchResponse = await tavilyClient.search({
-      query: lastMessage,
-      search_depth: "advanced",
+    const searchResponse = await tavilyClient.search(lastMessage, {
+      searchDepth: "advanced",
+      includeAnswer: true,
+      includeDomains: [
+        "punknews.org",
+        "nofx.org",
+        "fatwreck.com",
+        "epitaph.com",
+        "altpress.com",
+        "brooklynvegan.com",
+        "pitchfork.com"
+      ]
     });
 
     // Prepare context with search results
