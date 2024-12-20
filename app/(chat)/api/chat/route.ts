@@ -6,7 +6,10 @@ import { models, DEFAULT_MODEL_NAME } from '@/lib/ai/models';
 // Initialize Tavily
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY || '' });
 
-export const maxDuration = 60;
+const SYSTEM_PROMPT = `You are a friendly and knowledgeable AI assistant with expertise in punk rock music. 
+Your responses should be informative, engaging, and reflect the spirit of punk rock culture. 
+When discussing music, bands, or events, try to provide relevant historical context and interesting facts.
+Feel free to express enthusiasm and personality in your responses while maintaining accuracy and helpfulness.`;
 
 export async function POST(req: Request) {
   const { messages, id } = await req.json();
@@ -24,63 +27,48 @@ export async function POST(req: Request) {
       ? lastMessage.content.map(part => typeof part === 'string' ? part : '').join(' ')
       : '';
 
-  // Perform a domain-specific search focused on punk rock
-  const domainResults = await tavilyClient.search(lastMessageContent, {
-    searchDepth: 'advanced',
-    includeDomains: [
-      'punknews.org',
-      'punktastic.com',
-      'kerrang.com',
-      'altpress.com',
-      'brooklynvegan.com',
-      'thepunksite.com',
-      'dyingscene.com',
-      'propertyofzack.com',
-      'absolutepunk.net',
-      'punxinsolidarity.com'
-    ]
-  });
-
-  // Perform an open search for broader context
-  const openResults = await tavilyClient.search(lastMessageContent, {
-    searchDepth: 'advanced'
-  });
-
-  // Combine and deduplicate results based on URLs
-  const seenUrls = new Set();
-  const allResults = [...domainResults.results, ...openResults.results]
-    .filter(result => {
-      if (seenUrls.has(result.url)) {
-        return false;
-      }
-      seenUrls.add(result.url);
-      return true;
-    })
-    .slice(0, 4); // Get top 4 unique results
-
-  // Prepare context with combined search results
-  const searchContext = allResults
-    .map(result => `${result.title}: ${result.content}`)
-    .join('\n\n');
-
-  // Add system prompt and search context
-  const prompt = [
-    {
-      role: 'system',
-      content: `You are a friendly and knowledgeable AI assistant with expertise in punk rock music. 
-      Your responses should be informative, engaging, and reflect the spirit of punk rock culture. 
-      When discussing music, bands, or events, try to provide relevant historical context and interesting facts.
-      Feel free to express enthusiasm and personality in your responses while maintaining accuracy and helpfulness.
-      
-      Here is some relevant real-time information to help with your response:\n\n${searchContext}`
-    },
-    ...coreMessages
-  ];
-
   try {
+    // Perform searches
+    const [domainResults, openResults] = await Promise.all([
+      tavilyClient.search(lastMessageContent, {
+        searchDepth: 'advanced',
+        includeDomains: [
+          'punknews.org',
+          'punktastic.com',
+          'kerrang.com',
+          'altpress.com',
+          'brooklynvegan.com'
+        ]
+      }),
+      tavilyClient.search(lastMessageContent, {
+        searchDepth: 'advanced'
+      })
+    ]);
+
+    // Combine and deduplicate results
+    const seenUrls = new Set();
+    const allResults = [...domainResults.results, ...openResults.results]
+      .filter(result => {
+        if (seenUrls.has(result.url)) return false;
+        seenUrls.add(result.url);
+        return true;
+      })
+      .slice(0, 4);
+
+    // Create search context
+    const searchContext = allResults
+      .map(result => `${result.title}: ${result.content}`)
+      .join('\n\n');
+
+    // Create messages array with proper typing
+    const messagesForModel = [
+      { role: 'system' as const, content: `${SYSTEM_PROMPT}\n\nRecent information:\n${searchContext}` },
+      ...coreMessages
+    ];
+
     const result = await streamText({
       model: models[DEFAULT_MODEL_NAME],
-      messages: prompt,
+      messages: messagesForModel,
       onFinish: async ({ responseMessages }) => {
         // Handle any post-completion tasks here
       },
