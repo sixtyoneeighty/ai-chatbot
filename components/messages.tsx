@@ -48,7 +48,7 @@ function PureMessages({
 
       {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
         <div className="flex items-center justify-center p-8 rounded-lg bg-muted">
-          <div className="h-4 w-4 animate-spin rounded-full border-t-2 border-foreground"></div>
+          <div className="size-4 animate-spin rounded-full border-t-2 border-foreground"></div>
         </div>
       )}
     </div>

@@ -21,10 +21,10 @@ export const Overview = () => {
         <div className="text-left space-y-4">
           <p className="font-medium">Try asking me about:</p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li>"What makes NOFX's 'Punk in Drublic' such a influential album?"</li>
-            <li>"Tell me about the impact of Fat Wreck Chords on the 90s punk scene"</li>
-            <li>"How has pop-punk evolved since the Drive-Thru Records era?"</li>
-            <li>"What are your thoughts on the commercialization of punk rock?"</li>
+            <li>&quot;What makes NOFX&apos;s &apos;Punk in Drublic&apos; such a influential album?&quot;</li>
+            <li>&quot;Tell me about the impact of Fat Wreck Chords on the 90s punk scene&quot;</li>
+            <li>&quot;How has pop-punk evolved since the Drive-Thru Records era?&quot;</li>
+            <li>&quot;What are your thoughts on the commercialization of punk rock?&quot;</li>
           </ul>
         </div>
         <p className="text-sm text-muted-foreground">

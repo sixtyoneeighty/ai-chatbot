@@ -77,7 +77,7 @@ export function Chat({
             className="flex-1"
           />
           <Button type="submit" disabled={isLoading}>
-            <SendIcon className="h-4 w-4" />
+            <SendIcon className="size-4" />
           </Button>
         </form>
       )}

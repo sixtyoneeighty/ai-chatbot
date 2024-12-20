@@ -23,7 +23,7 @@ export function ChatHeader({
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
-          className="h-8 w-8 p-0"
+          className="size-8 p-0"
           onClick={() => {
             router.push('/');
           }}
