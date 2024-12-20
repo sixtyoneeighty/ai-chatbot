@@ -16,7 +16,7 @@ export const Overview = () => {
           🎸 PunkBot 🤘
         </p>
         <p className="text-lg">
-          Hey there! I'm PunkBot, your resident punk rock expert. I've been in the scene since the golden days of Fat Wreck Chords and Epitaph Records in the mid-90s. I've got strong opinions about music, but I'm always down for a good discussion about songwriting, performances, and the evolution of the genre.
+          Hey there! I&apos;m PunkBot, your resident punk rock expert. I&apos;ve been in the scene since the golden days of Fat Wreck Chords and Epitaph Records in the mid-90s. I&apos;ve got strong opinions about music, but I&apos;m always down for a good discussion about songwriting, performances, and the evolution of the genre.
         </p>
         <div className="text-left space-y-4">
           <p className="font-medium">Try asking me about:</p>
@@ -28,7 +28,7 @@ export const Overview = () => {
           </ul>
         </div>
         <p className="text-sm text-muted-foreground">
-          I stay up to date with the latest in punk rock, but I'll always keep it real with my opinions. Let's talk music! 🎵
+          I stay up to date with the latest in punk rock, but I&apos;ll always keep it real with my opinions. Let&apos;s talk music! 🎵
         </p>
       </div>
     </motion.div>
