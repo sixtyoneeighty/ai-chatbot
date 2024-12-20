@@ -25,6 +25,7 @@ export function SignInForm() {
         email,
         password,
         redirect: false,
+        callbackUrl: '/'
       });
 
       if (result?.error) {
@@ -36,6 +37,7 @@ export function SignInForm() {
       router.push('/');
     } catch (error) {
       toast.error('Something went wrong');
+      console.error('Sign in error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +67,7 @@ export function SignInForm() {
                 autoComplete="email"
                 autoCorrect="off"
                 disabled={isLoading}
+                required
               />
             </div>
             <div className="grid gap-1">
@@ -78,6 +81,7 @@ export function SignInForm() {
                 name="password"
                 autoComplete="current-password"
                 disabled={isLoading}
+                required
               />
             </div>
             <Button disabled={isLoading}>
