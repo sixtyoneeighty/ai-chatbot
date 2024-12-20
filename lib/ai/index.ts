@@ -9,7 +9,7 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
 });
 
-export const customModel = (apiIdentifier: string) => {
+export const createModel = (apiIdentifier: string) => {
   const model = google(apiIdentifier, {
     safetySettings: [
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
