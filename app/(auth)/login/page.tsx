@@ -14,6 +14,7 @@ export default function Page() {
   const router = useRouter();
 
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isSuccessful, setIsSuccessful] = useState(false);
 
   const [state, formAction] = useActionState<LoginActionState, FormData>(
@@ -25,8 +26,10 @@ export default function Page() {
 
   useEffect(() => {
     if (state.status === 'failed') {
+      setIsLoading(false);
       toast.error('Invalid credentials!');
     } else if (state.status === 'invalid_data') {
+      setIsLoading(false);
       toast.error('Failed validating your submission!');
     } else if (state.status === 'success') {
       setIsSuccessful(true);
@@ -35,9 +38,16 @@ export default function Page() {
     }
   }, [state.status, router]);
 
-  const handleSubmit = (formData: FormData) => {
-    setEmail(formData.get('email') as string);
-    formAction(formData);
+  const handleSubmit = async (formData: FormData) => {
+    try {
+      setIsLoading(true);
+      setEmail(formData.get('email') as string);
+      await formAction(formData);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Something went wrong during login');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -50,7 +60,9 @@ export default function Page() {
           </p>
         </div>
         <AuthForm action={handleSubmit} defaultEmail={email}>
-          <SubmitButton isSuccessful={isSuccessful}>Sign in</SubmitButton>
+          <SubmitButton isSuccessful={isSuccessful} disabled={isLoading}>
+            {isLoading ? 'Signing in...' : 'Sign in'}
+          </SubmitButton>
           <p className="text-center text-sm text-gray-600 mt-4 dark:text-zinc-400">
             {"Don't have an account? "}
             <Link

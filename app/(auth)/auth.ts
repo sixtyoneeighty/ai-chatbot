@@ -21,12 +21,31 @@ export const {
     Credentials({
       credentials: {},
       async authorize({ email, password }: any) {
-        const users = await getUser(email);
-        if (users.length === 0) return null;
-        // biome-ignore lint: Forbidden non-null assertion.
-        const passwordsMatch = await compare(password, users[0].password!);
-        if (!passwordsMatch) return null;
-        return users[0] as any;
+        try {
+          console.log('Attempting to authorize user:', email);
+          const users = await getUser(email);
+          console.log('Found users:', users.length);
+          
+          if (users.length === 0) {
+            console.log('No user found with email:', email);
+            return null;
+          }
+          
+          // biome-ignore lint: Forbidden non-null assertion.
+          const passwordsMatch = await compare(password, users[0].password!);
+          console.log('Passwords match:', passwordsMatch);
+          
+          if (!passwordsMatch) {
+            console.log('Password mismatch for user:', email);
+            return null;
+          }
+          
+          console.log('Successfully authorized user:', email);
+          return users[0] as any;
+        } catch (error) {
+          console.error('Authorization error:', error);
+          throw error;
+        }
       },
     }),
   ],
