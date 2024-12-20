@@ -24,3 +24,6 @@ export const createModel = (apiIdentifier: string) => {
     middleware: {}
   });
 };
+
+// Re-export for backward compatibility
+export const customModel = createModel;
