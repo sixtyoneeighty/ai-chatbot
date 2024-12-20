@@ -4,7 +4,13 @@ import { z } from 'zod';
 
 import { createUser, getUser } from '@/lib/db/queries';
 
-import { signIn } from './auth';
+import { signIn } from 'next-auth/react';
+import { cookies } from 'next/headers';
+
+export async function saveModelId(model: string) {
+  const cookieStore = await cookies();
+  cookieStore.set('model-id', model);
+}
 
 const authFormSchema = z.object({
   email: z.string().email(),

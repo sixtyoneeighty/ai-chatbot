@@ -10,7 +10,7 @@ interface ExtendedSession extends Session {
   user: User;
 }
 
-export const auth = NextAuth({
+const handler = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
@@ -58,3 +58,5 @@ export const auth = NextAuth({
     },
   },
 });
+
+export const { auth, signIn, signOut } = handler;
