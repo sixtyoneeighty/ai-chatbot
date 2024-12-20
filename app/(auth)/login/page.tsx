@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { signIn } from 'next-auth/react';
 
 import { AuthForm } from '@/components/auth-form';
 import { SubmitButton } from '@/components/submit-button';
@@ -12,36 +13,41 @@ import { login, type LoginActionState } from '../actions';
 
 export default function Page() {
   const router = useRouter();
-
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
-
-  const [state, formAction] = useActionState<LoginActionState, FormData>(
-    login,
-    {
-      status: 'idle',
-    },
-  );
-
-  useEffect(() => {
-    if (state.status === 'failed') {
-      toast.error('Invalid credentials!');
-    } else if (state.status === 'invalid_data') {
-      toast.error('Failed validating your submission!');
-    } else if (state.status === 'success') {
-      setIsSuccessful(true);
-      toast.success('Login successful!');
-      router.replace('/');
-    }
-  }, [state.status, router]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      setEmail(formData.get('email') as string);
-      formAction(formData);
+      setIsLoading(true);
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
+      setEmail(email);
+
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (!result) {
+        toast.error('Something went wrong during login');
+        return;
+      }
+
+      if (result.error) {
+        toast.error('Invalid credentials!');
+        return;
+      }
+
+      setIsSuccessful(true);
+      toast.success('Login successful!');
+      router.replace('/');
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Something went wrong during login');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,7 +62,7 @@ export default function Page() {
         </div>
         <AuthForm action={handleSubmit} defaultEmail={email}>
           <SubmitButton isSuccessful={isSuccessful}>
-            {state.status === 'in_progress' ? 'Signing in...' : 'Sign in'}
+            {isLoading ? 'Signing in...' : 'Sign in'}
           </SubmitButton>
           <p className="text-center text-sm text-gray-600 mt-4 dark:text-zinc-400">
             {"Don't have an account? "}
