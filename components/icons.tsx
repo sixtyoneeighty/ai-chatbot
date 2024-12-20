@@ -195,7 +195,7 @@ export const InvoiceIcon = ({ size = 16 }: { size: number }) => {
   );
 };
 
-export const LogoOpenAI = ({ size = 16 }: { size?: number }) => {
+export const Logogoogle = ({ size = 16 }: { size?: number }) => {
   return (
     <svg
       height={size}
