@@ -2,6 +2,7 @@ import { Message, convertToCoreMessages, streamText } from 'ai';
 import { tavily } from '@tavily/core';
 import { auth } from '@/app/(auth)/auth';
 import { models, DEFAULT_MODEL_NAME } from '@/lib/ai/models';
+import { deleteChatById } from '@/db/queries';
 
 // Initialize Tavily
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY || '' });
@@ -85,17 +86,21 @@ export async function POST(req: Request) {
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  const session = await auth();
+
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
 
   if (!id) {
     return new Response('Missing chat ID', { status: 400 });
   }
 
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return new Response('Unauthorized', { status: 401 });
+  try {
+    await deleteChatById(id);
+    return new Response('OK');
+  } catch (error) {
+    console.error('Error deleting chat:', error);
+    return new Response('Error deleting chat', { status: 500 });
   }
-
-  await deleteChatById({ id });
-  return new Response('OK');
 }
