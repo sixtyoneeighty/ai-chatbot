@@ -12,7 +12,7 @@ import { fetcher } from '@/lib/utils';
 import { Messages } from './messages';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { VisibilityType } from './visibility-selector';
+import { VisibilityType } from '@/lib/types';
 
 export function Chat({
   id,
