@@ -12,3 +12,5 @@ export interface UIBlock {
     height: number;
   };
 }
+
+export type BlockKind = UIBlock['kind'];
