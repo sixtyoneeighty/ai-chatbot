@@ -1,31 +1,28 @@
-import { Message, convertToCoreMessages, StreamingTextResponse } from 'ai';
-import { TavilySearchAPIClient } from '@tavily/core';
+import { Message, convertToCoreMessages, streamText } from 'ai';
+import { tavily } from '@tavily/core';
 import { auth } from '@/app/(auth)/auth';
-import { models } from '@/lib/ai/models';
+import { model } from '@/lib/ai/models';
 
 // Initialize Tavily
-const tavilyClient = new TavilySearchAPIClient(process.env.TAVILY_API_KEY || '');
+const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY || '' });
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  const { messages, id } = await req.json();
   const session = await auth();
-  if (!session || !session.user) {
+
+  if (!session) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const { messages, modelName = 'gemini-exp-1206' } = await req.json();
-  const model = models[modelName];
-
   const coreMessages = convertToCoreMessages(messages);
-  const prompt = [...coreMessages];
-  const lastMessage = prompt[prompt.length - 1].content;
+  const lastMessage = coreMessages[coreMessages.length - 1];
 
   // Perform a domain-specific search focused on punk rock
-  const domainResults = await tavilyClient.search({
-    query: lastMessage,
+  const domainResults = await tavilyClient.search(lastMessage.content, {
     searchDepth: 'advanced',
-    includeUrls: [
+    includeDomains: [
       'punknews.org',
       'punktastic.com',
       'kerrang.com',
@@ -40,50 +37,51 @@ export async function POST(req: Request) {
   });
 
   // Perform an open search for broader context
-  const openResults = await tavilyClient.search({
-    query: lastMessage,
+  const openResults = await tavilyClient.search(lastMessage.content, {
     searchDepth: 'advanced'
   });
 
   // Combine and deduplicate results based on URLs
   const seenUrls = new Set();
-  const combinedResults = [...domainResults, ...openResults].filter(result => {
-    if (seenUrls.has(result.url)) {
-      return false;
-    }
-    seenUrls.add(result.url);
-    return true;
-  });
+  const allResults = [...domainResults.results, ...openResults.results]
+    .filter(result => {
+      if (seenUrls.has(result.url)) {
+        return false;
+      }
+      seenUrls.add(result.url);
+      return true;
+    })
+    .slice(0, 4); // Get top 4 unique results
 
-  // Add search results to the prompt
-  if (combinedResults.length > 0) {
-    prompt.unshift({
+  // Prepare context with combined search results
+  const searchContext = allResults
+    .map(result => `${result.title}: ${result.content}`)
+    .join('\n\n');
+
+  // Add system prompt and search context
+  const prompt = [
+    {
       role: 'system',
-      content: `Here are some relevant search results for context:\n\n${combinedResults
-        .map(
-          result => `Title: ${result.title}\nContent: ${result.content}\nURL: ${result.url}\n`
-        )
-        .join('\n')}`
-    });
-  }
-
-  // Add system prompt
-  prompt.unshift({
-    role: 'system',
-    content: `You are a friendly and knowledgeable AI assistant with expertise in punk rock music. 
-    Your responses should be informative, engaging, and reflect the spirit of punk rock culture. 
-    When discussing music, bands, or events, try to provide relevant historical context and interesting facts.
-    Feel free to express enthusiasm and personality in your responses while maintaining accuracy and helpfulness.`
-  });
+      content: `You are a friendly and knowledgeable AI assistant with expertise in punk rock music. 
+      Your responses should be informative, engaging, and reflect the spirit of punk rock culture. 
+      When discussing music, bands, or events, try to provide relevant historical context and interesting facts.
+      Feel free to express enthusiasm and personality in your responses while maintaining accuracy and helpfulness.
+      
+      Here is some relevant real-time information to help with your response:\n\n${searchContext}`
+    },
+    ...coreMessages
+  ];
 
   try {
-    // Use the Google AI model to generate a streaming response
-    const stream = await model.generateContentStream({
-      contents: prompt.map(m => ({ role: m.role, parts: [{ text: m.content }] }))
+    const result = await streamText({
+      model,
+      messages: prompt,
+      onFinish: async ({ responseMessages }) => {
+        // Handle any post-completion tasks here
+      },
     });
 
-    // Convert the response to a ReadableStream
-    return new StreamingTextResponse(stream);
+    return result.toDataStreamResponse({});
   } catch (error) {
     console.error('Error generating response:', error);
     return new Response('Error generating response', { status: 500 });
