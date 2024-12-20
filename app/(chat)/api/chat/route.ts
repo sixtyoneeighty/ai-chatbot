@@ -1,14 +1,11 @@
-import { Message, convertToCoreMessages } from 'ai';
+import { Message, convertToCoreMessages, StreamingTextResponse } from 'ai';
 import { tavily } from '@tavily/core';
 import { auth } from '@/app/(auth)/auth';
 import { systemPrompt } from '@/lib/ai/prompts';
-import { google } from '@ai-sdk/google';
+import { model } from '@/lib/ai/models';
 
 // Initialize Tavily
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY! });
-
-// Initialize Google AI with Vercel AI SDK
-const googleAI = google('gemini-pro');
 
 export const maxDuration = 60;
 
@@ -24,7 +21,9 @@ export async function POST(req: Request) {
   try {
     // Get real-time information using Tavily
     const lastMessage = messages[messages.length - 1].content;
-    const searchResponse = await tavilyClient.search(lastMessage, {
+    
+    // Perform domain-specific search
+    const punkSearch = await tavilyClient.search(lastMessage, {
       searchDepth: "advanced",
       includeAnswer: true,
       includeDomains: [
@@ -38,9 +37,26 @@ export async function POST(req: Request) {
       ]
     });
 
-    // Prepare context with search results
-    const searchContext = searchResponse.results
-      .slice(0, 3)
+    // Perform open search
+    const openSearch = await tavilyClient.search(lastMessage, {
+      searchDepth: "advanced",
+      includeAnswer: true
+    });
+
+    // Combine and deduplicate results based on URL
+    const seenUrls = new Set();
+    const allResults = [...punkSearch.results, ...openSearch.results]
+      .filter(result => {
+        if (seenUrls.has(result.url)) {
+          return false;
+        }
+        seenUrls.add(result.url);
+        return true;
+      })
+      .slice(0, 4); // Get top 4 unique results
+
+    // Prepare context with combined search results
+    const searchContext = allResults
       .map(result => `${result.title}: ${result.content}`)
       .join('\n\n');
 
@@ -54,12 +70,14 @@ export async function POST(req: Request) {
       }
     ];
 
-    // Use the Vercel AI SDK to stream the response
-    const response = await googleAI.streamText({
-      messages: prompt
+    // Use the Google AI model to generate a streaming response
+    const response = await model.generateText({
+      prompt: prompt.map(m => m.content).join('\n'),
+      stream: true
     });
 
-    return response;
+    // Return a streaming response
+    return new StreamingTextResponse(response);
 
   } catch (error) {
     console.error('Error in chat route:', error);
