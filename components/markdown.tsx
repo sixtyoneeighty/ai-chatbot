@@ -3,7 +3,6 @@
 import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
 
 const MemoizedReactMarkdown = memo(
   ReactMarkdown,
@@ -13,7 +12,7 @@ const MemoizedReactMarkdown = memo(
 export function Markdown({ content }: { content: string }) {
   return (
     <MemoizedReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
+      remarkPlugins={[remarkGfm]}
       components={{
         pre: ({ node, ...props }) => (
           <div className="overflow-auto w-full my-2 bg-black/10 p-2 rounded-lg">
