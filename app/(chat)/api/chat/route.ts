@@ -4,6 +4,15 @@ import { auth } from '@/app/(auth)/auth';
 import { models, DEFAULT_MODEL_NAME } from '@/lib/ai/models';
 import { deleteChatById } from '@/lib/db/queries';
 
+// Check for required environment variables
+if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+  throw new Error('Missing GOOGLE_GENERATIVE_AI_API_KEY environment variable');
+}
+
+if (!process.env.TAVILY_API_KEY) {
+  throw new Error('Missing TAVILY_API_KEY environment variable');
+}
+
 // Initialize Tavily
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY || '' });
 
