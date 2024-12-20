@@ -21,11 +21,21 @@ export const {
     Credentials({
       credentials: {},
       async authorize({ email, password }: any) {
+        console.log('Attempting login with email:', email);
         const users = await getUser(email);
-        if (users.length === 0) return null;
+        console.log('Found users:', users.length);
+        if (users.length === 0) {
+          console.log('No user found');
+          return null;
+        }
         // biome-ignore lint: Forbidden non-null assertion.
         const passwordsMatch = await compare(password, users[0].password!);
-        if (!passwordsMatch) return null;
+        console.log('Password match:', passwordsMatch);
+        if (!passwordsMatch) {
+          console.log('Password mismatch');
+          return null;
+        }
+        console.log('Login successful');
         return users[0] as any;
       },
     }),
@@ -35,7 +45,7 @@ export const {
       if (user) {
         token.id = user.id;
       }
-
+      console.log('JWT callback:', { token });
       return token;
     },
     async session({
@@ -48,7 +58,7 @@ export const {
       if (session.user) {
         session.user.id = token.id as string;
       }
-
+      console.log('Session callback:', { session });
       return session;
     },
   },
