@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { MoreHorizontalIcon } from './icons';
 import { Button } from './ui/button';
-import { VisibilityType } from './visibility-selector';
+import { VisibilityType } from '@/lib/types';
 
 export function ChatHeader({
   chatId,
