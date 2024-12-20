@@ -1,15 +1,4 @@
 import type { Experimental_LanguageModelV1Middleware } from 'ai';
 
-export const customMiddleware: Experimental_LanguageModelV1Middleware = {
-  transformRequest: (request) => {
-    return {
-      ...request,
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' }
-      ]
-    };
-  }
-};
+// Empty middleware for now, we'll add any custom behavior here if needed
+export const customMiddleware: Experimental_LanguageModelV1Middleware = {};
