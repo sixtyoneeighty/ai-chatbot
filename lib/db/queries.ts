@@ -175,7 +175,7 @@ export async function saveDocument({
 }: {
   id: string;
   title: string;
-  kind: string;
+  kind: 'text' | 'code';
   content: string;
   userId: string;
 }) {
