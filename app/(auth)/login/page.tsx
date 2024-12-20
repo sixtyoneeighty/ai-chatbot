@@ -30,10 +30,14 @@ export default function Page() {
       toast.error('Failed validating your submission!');
     } else if (state.status === 'success') {
       setIsSuccessful(true);
+      // First refresh to update auth state
       router.refresh();
-      setTimeout(() => {
+      // Then navigate to home after a small delay
+      const timeout = setTimeout(() => {
         router.push('/');
-      }, 500); // Small delay to show success state
+        router.refresh();
+      }, 1000);
+      return () => clearTimeout(timeout);
     }
   }, [state.status, router]);
 

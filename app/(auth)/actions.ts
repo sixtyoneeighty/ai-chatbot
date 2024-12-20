@@ -36,7 +36,6 @@ export const login = async (
       email: validatedData.email,
       password: validatedData.password,
       redirect: false,
-      callbackUrl: '/',
     });
 
     console.log('Sign in result:', result);
@@ -56,7 +55,7 @@ export const login = async (
       return { status: 'failed' };
     }
 
-    console.log('Sign in successful');
+    console.log('Sign in successful, redirecting...');
     return { status: 'success' };
   } catch (error) {
     if (error instanceof z.ZodError) {
