@@ -3,7 +3,7 @@ import { tavily } from '@tavily/core';
 import { auth } from '@/app/(auth)/auth';
 import { model } from '@/lib/ai/models';
 import { systemPrompt } from '@/lib/ai/prompts';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { google } from '@ai-sdk/google';
 import { generateUUID } from '@/lib/utils';
 import { saveChat, saveMessages, getChatById, deleteChatById } from '@/lib/db/queries';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -11,8 +11,8 @@ import { generateTitleFromUserMessage } from '../../actions';
 // Initialize Tavily
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY! });
 
-// Initialize Google AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
+// Initialize Google AI with Vercel AI SDK
+const googleAI = google('gemini-pro');
 
 export const maxDuration = 60;
 
@@ -39,9 +39,7 @@ export async function POST(req: Request) {
       .map(result => `${result.title}: ${result.content}`)
       .join('\n\n');
 
-    // Create the chat model
-    const chat = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
+    // Prepare messages with system prompt and search context
     const prompt = [
       { role: 'system', content: systemPrompt },
       ...coreMessages,
@@ -51,14 +49,12 @@ export async function POST(req: Request) {
       }
     ];
 
-    const result = await chat.generateContentStream({
-      contents: [{ role: 'user', text: prompt.map(m => m.content).join('\n') }],
+    // Use the Vercel AI SDK to stream the response
+    const response = await googleAI.streamText({
+      messages: prompt
     });
 
-    // Stream the response
-    return new Response(streamText(result), {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    });
+    return response;
 
   } catch (error) {
     console.error('Error in chat route:', error);
