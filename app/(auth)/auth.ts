@@ -1,6 +1,7 @@
 import { compare } from 'bcrypt-ts';
 import NextAuth, { type User, type Session } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import { getServerSession } from 'next-auth';
 
 import { getUser } from '@/lib/db/queries';
 
@@ -10,7 +11,7 @@ interface ExtendedSession extends Session {
   user: User;
 }
 
-const handler = NextAuth({
+const config = {
   ...authConfig,
   providers: [
     Credentials({
@@ -57,6 +58,6 @@ const handler = NextAuth({
       return session;
     },
   },
-});
+};
 
-export const { auth, signIn, signOut } = handler;
+export const auth = () => getServerSession(config);

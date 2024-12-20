@@ -1,5 +1,8 @@
 import { type NextRequest } from 'next/server';
-import { auth } from '@/app/(auth)/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/app/(auth)/auth.config';
 
-export const GET = (request: NextRequest) => auth(request);
-export const POST = (request: NextRequest) => auth(request);
+const handler = NextAuth(authConfig);
+
+export const GET = handler.auth;
+export const POST = handler.auth;
