@@ -9,19 +9,17 @@ import { generateUUID } from '@/lib/utils';
 import { ChatWrapper } from './chat-wrapper';
 
 export default async function ChatPage() {
-  const session = await auth();
+  const [session, cookieStore] = await Promise.all([
+    auth(),
+    cookies()
+  ]);
 
   if (!session?.user) {
     redirect('/login');
   }
 
   const id = generateUUID();
-
-  // Get model from cookie or use default
-  const modelIdFromCookie = cookies().has('model-id') 
-    ? cookies().get('model-id')?.value 
-    : null;
-    
+  const modelIdFromCookie = cookieStore.get('model-id')?.value;
   const selectedModelId = modelsList.find(
     (model) => model.id === modelIdFromCookie
   )?.id || DEFAULT_MODEL_NAME;
