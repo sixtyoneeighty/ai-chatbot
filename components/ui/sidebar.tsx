@@ -155,11 +155,147 @@ function SidebarMenuButton({
   );
 }
 
+interface SidebarHeaderProps extends React.ComponentPropsWithoutRef<'div'> {
+  children: React.ReactNode;
+}
+
+function SidebarHeader({ children, className, ...props }: SidebarHeaderProps) {
+  return (
+    <div
+      className={cn('flex h-14 items-center px-4', className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface SidebarContentProps extends React.ComponentPropsWithoutRef<'div'> {
+  children: React.ReactNode;
+}
+
+function SidebarContent({ children, className, ...props }: SidebarContentProps) {
+  return (
+    <div
+      className={cn('flex-1 overflow-y-auto', className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface SidebarFooterProps extends React.ComponentPropsWithoutRef<'div'> {
+  children: React.ReactNode;
+}
+
+function SidebarFooter({ children, className, ...props }: SidebarFooterProps) {
+  return (
+    <div
+      className={cn('flex items-center border-t p-4', className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface SidebarMenuProps extends React.ComponentPropsWithoutRef<'div'> {
+  children: React.ReactNode;
+}
+
+function SidebarMenu({ children, className, ...props }: SidebarMenuProps) {
+  return (
+    <div
+      className={cn('flex flex-col gap-1', className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface SidebarMenuActionProps extends React.ComponentPropsWithoutRef<'button'> {
+  icon?: React.ReactNode;
+}
+
+function SidebarMenuAction({ 
+  children,
+  className,
+  icon,
+  ...props 
+}: SidebarMenuActionProps) {
+  return (
+    <button
+      className={cn(
+        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium',
+        'hover:bg-accent hover:text-accent-foreground',
+        className
+      )}
+      {...props}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+interface SidebarGroupProps extends React.ComponentPropsWithoutRef<'div'> {
+  title?: string;
+  children: React.ReactNode;
+}
+
+function SidebarGroup({ title, children, className, ...props }: SidebarGroupProps) {
+  return (
+    <div className={cn('space-y-2', className)} {...props}>
+      {title && (
+        <h4 className="px-2 text-sm font-semibold">{title}</h4>
+      )}
+      {children}
+    </div>
+  );
+}
+
+interface SidebarGroupContentProps extends React.ComponentPropsWithoutRef<'div'> {
+  children: React.ReactNode;
+}
+
+function SidebarGroupContent({ children, className, ...props }: SidebarGroupContentProps) {
+  return (
+    <div className={cn('space-y-1', className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+interface SidebarInsetProps extends React.ComponentPropsWithoutRef<'div'> {
+  children: React.ReactNode;
+}
+
+function SidebarInset({ children, className, ...props }: SidebarInsetProps) {
+  return (
+    <div
+      className={cn('relative z-20 overflow-hidden', className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
 export { 
   Sidebar, 
   SidebarProvider, 
   SidebarToggle, 
   useSidebar,
   SidebarMenuItem,
-  SidebarMenuButton
+  SidebarMenuButton,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarInset
 };

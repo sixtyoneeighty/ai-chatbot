@@ -1,4 +1,4 @@
-import { Message, convertToCoreMessages, StreamingTextResponse } from 'ai';
+import { Message, convertToCoreMessages } from 'ai';
 import { tavily } from '@tavily/core';
 import { auth } from '@/app/(auth)/auth';
 import { systemPrompt } from '@/lib/ai/prompts';
@@ -71,13 +71,18 @@ export async function POST(req: Request) {
     ];
 
     // Use the Google AI model to generate a streaming response
-    const response = await model.generateText({
+    const stream = await model.generateText({
       prompt: prompt.map(m => m.content).join('\n'),
       stream: true
     });
 
     // Return a streaming response
-    return new StreamingTextResponse(response);
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked'
+      }
+    });
 
   } catch (error) {
     console.error('Error in chat route:', error);
