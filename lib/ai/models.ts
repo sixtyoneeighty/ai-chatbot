@@ -1,25 +1,12 @@
-// Define your models here.
+import { google } from '@ai-sdk/google';
 
-export interface Model {
-  id: string;
-  label: string;
-  apiIdentifier: string;
-  description: string;
-}
+const model = google('gemini-exp-1206', {
+  safetySettings: [
+    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' }
+  ]
+});
 
-export const models: Array<Model> = [
-  {
-    id: 'gpt-4o-mini',
-    label: 'GPT 4o mini',
-    apiIdentifier: 'gpt-4o-mini',
-    description: 'Small model for fast, lightweight tasks',
-  },
-  {
-    id: 'gpt-4o',
-    label: 'GPT 4o',
-    apiIdentifier: 'gpt-4o',
-    description: 'For complex, multi-step tasks',
-  },
-] as const;
-
-export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';
+export { model };

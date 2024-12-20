@@ -1,7 +1,5 @@
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-
-import { MessageIcon, VercelIcon } from './icons';
+import { MessageIcon } from './icons';
 
 export const Overview = () => {
   return (
@@ -14,37 +12,23 @@ export const Overview = () => {
       transition={{ delay: 0.5 }}
     >
       <div className="rounded-xl p-6 flex flex-col gap-8 leading-relaxed text-center max-w-xl">
-        <p className="flex flex-row justify-center gap-4 items-center">
-          <VercelIcon size={32} />
-          <span>+</span>
-          <MessageIcon size={32} />
+        <p className="flex flex-row justify-center gap-4 items-center text-4xl font-bold">
+          🎸 PunkBot 🤘
         </p>
-        <p>
-          This is an{' '}
-          <Link
-            className="font-medium underline underline-offset-4"
-            href="https://github.com/vercel/ai-chatbot"
-            target="_blank"
-          >
-            open source
-          </Link>{' '}
-          chatbot template built with Next.js and the AI SDK by Vercel. It uses
-          the{' '}
-          <code className="rounded-md bg-muted px-1 py-0.5">streamText</code>{' '}
-          function in the server and the{' '}
-          <code className="rounded-md bg-muted px-1 py-0.5">useChat</code> hook
-          on the client to create a seamless chat experience.
+        <p className="text-lg">
+          Hey there! I'm PunkBot, your resident punk rock expert. I've been in the scene since the golden days of Fat Wreck Chords and Epitaph Records in the mid-90s. I've got strong opinions about music, but I'm always down for a good discussion about songwriting, performances, and the evolution of the genre.
         </p>
-        <p>
-          You can learn more about the AI SDK by visiting the{' '}
-          <Link
-            className="font-medium underline underline-offset-4"
-            href="https://sdk.vercel.ai/docs"
-            target="_blank"
-          >
-            docs
-          </Link>
-          .
+        <div className="text-left space-y-4">
+          <p className="font-medium">Try asking me about:</p>
+          <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+            <li>"What makes NOFX's 'Punk in Drublic' such a influential album?"</li>
+            <li>"Tell me about the impact of Fat Wreck Chords on the 90s punk scene"</li>
+            <li>"How has pop-punk evolved since the Drive-Thru Records era?"</li>
+            <li>"What are your thoughts on the commercialization of punk rock?"</li>
+          </ul>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          I stay up to date with the latest in punk rock, but I'll always keep it real with my opinions. Let's talk music! 🎵
         </p>
       </div>
     </motion.div>
