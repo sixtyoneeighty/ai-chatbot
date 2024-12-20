@@ -40,11 +40,7 @@ export default function Page() {
   const handleSubmit = async (formData: FormData) => {
     try {
       setEmail(formData.get('email') as string);
-      const result = await formAction(formData);
-      
-      if (result?.status === 'failed') {
-        toast.error('Invalid credentials!');
-      }
+      formAction(formData);
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Something went wrong during login');

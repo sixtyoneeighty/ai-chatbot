@@ -19,12 +19,12 @@ export const login = async (
   prevState: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> => {
-  try {
-    // Set status to in_progress at the start
-    if (prevState.status === 'idle') {
-      return { status: 'in_progress' };
-    }
+  // Always start with in_progress
+  if (prevState.status === 'idle') {
+    return { status: 'in_progress' };
+  }
 
+  try {
     const validatedData = authFormSchema.parse({
       email: formData.get('email'),
       password: formData.get('password'),
