@@ -9,17 +9,6 @@ export const authConfig = {
     // while this file is also used in non-Node.js environments
   ],
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isAuthPage = nextUrl.pathname === '/login' || 
-                        nextUrl.pathname === '/register';
-      
-      if (isAuthPage) {
-        return true;
-      }
-
-      return isLoggedIn;
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

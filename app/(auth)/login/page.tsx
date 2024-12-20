@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 
 import { AuthForm } from '@/components/auth-form';
 import { SubmitButton } from '@/components/submit-button';
-import { auth } from '@/app/(auth)/auth';
 
 import { login, type LoginActionState } from '../actions';
 
@@ -23,17 +22,6 @@ export default function Page() {
       status: 'idle',
     },
   );
-
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      const session = await auth();
-      if (session) {
-        router.replace('/');
-      }
-    };
-    checkAuth();
-  }, [router]);
 
   useEffect(() => {
     if (state.status === 'failed') {
