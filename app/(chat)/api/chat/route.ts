@@ -69,8 +69,9 @@ export async function POST(req: Request) {
     const result = await streamText({
       model: models[DEFAULT_MODEL_NAME],
       messages: messagesForModel,
-      onFinish: async ({ responseMessages }) => {
-        // Handle any post-completion tasks here
+      onFinish: async (completion) => {
+        // Optional: Handle any post-completion tasks here
+        console.log('Chat completion finished');
       },
     });
 
