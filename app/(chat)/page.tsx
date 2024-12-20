@@ -1,10 +1,12 @@
+'use server';
+
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { Chat } from '@/components/chat';
 import { modelsList, DEFAULT_MODEL_NAME } from '@/lib/ai/models';
 import { auth } from '@/app/(auth)/auth';
 import { generateUUID } from '@/lib/utils';
+import { ChatWrapper } from './chat-wrapper';
 
 export default async function ChatPage() {
   const session = await auth();
@@ -15,20 +17,16 @@ export default async function ChatPage() {
 
   const id = generateUUID();
 
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   const modelIdFromCookie = cookieStore.get('model-id')?.value;
   const selectedModelId =
     modelsList.find((model) => model.id === modelIdFromCookie)?.id ||
     DEFAULT_MODEL_NAME;
 
   return (
-    <Chat
-      key={id}
+    <ChatWrapper
       id={id}
-      initialMessages={[]}
       selectedModelId={selectedModelId}
-      selectedVisibilityType="private"
-      isReadonly={false}
     />
   );
 }
