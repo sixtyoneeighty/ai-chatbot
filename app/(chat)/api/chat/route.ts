@@ -1,7 +1,7 @@
 import { Message, convertToCoreMessages, streamText } from 'ai';
 import { tavily } from '@tavily/core';
 import { auth } from '@/app/(auth)/auth';
-import { model } from '@/lib/ai/models';
+import { models, DEFAULT_MODEL_NAME } from '@/lib/ai/models';
 
 // Initialize Tavily
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY || '' });
@@ -18,9 +18,14 @@ export async function POST(req: Request) {
 
   const coreMessages = convertToCoreMessages(messages);
   const lastMessage = coreMessages[coreMessages.length - 1];
+  const lastMessageContent = typeof lastMessage.content === 'string' 
+    ? lastMessage.content 
+    : Array.isArray(lastMessage.content) 
+      ? lastMessage.content.map(part => typeof part === 'string' ? part : '').join(' ')
+      : '';
 
   // Perform a domain-specific search focused on punk rock
-  const domainResults = await tavilyClient.search(lastMessage.content, {
+  const domainResults = await tavilyClient.search(lastMessageContent, {
     searchDepth: 'advanced',
     includeDomains: [
       'punknews.org',
@@ -37,7 +42,7 @@ export async function POST(req: Request) {
   });
 
   // Perform an open search for broader context
-  const openResults = await tavilyClient.search(lastMessage.content, {
+  const openResults = await tavilyClient.search(lastMessageContent, {
     searchDepth: 'advanced'
   });
 
@@ -74,7 +79,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await streamText({
-      model,
+      model: models[DEFAULT_MODEL_NAME],
       messages: prompt,
       onFinish: async ({ responseMessages }) => {
         // Handle any post-completion tasks here
