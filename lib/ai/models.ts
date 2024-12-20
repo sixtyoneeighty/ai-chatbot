@@ -1,10 +1,14 @@
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
-if (!process.env.GOOGLE_API_KEY) {
-  throw new Error('Missing GOOGLE_API_KEY environment variable');
+if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+  throw new Error('Missing GOOGLE_GENERATIVE_AI_API_KEY environment variable');
 }
 
 export const DEFAULT_MODEL_NAME = 'gemini-exp-1206';
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
+});
 
 const geminiModel = google('gemini-exp-1206', {
   safetySettings: [
