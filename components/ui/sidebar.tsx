@@ -29,30 +29,33 @@ function useSidebar() {
   return context;
 }
 
-const SidebarProvider = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<'div'>
->(({ children, ...props }, ref) => {
-  const [open, setOpen] = React.useState(true);
-  const [openMobile, setOpenMobile] = React.useState(false);
-  const isMobile = useIsMobile();
+interface SidebarProviderProps extends React.ComponentPropsWithoutRef<'div'> {
+  defaultOpen?: boolean;
+}
 
-  return (
-    <SidebarContext.Provider
-      value={{
-        open,
-        setOpen,
-        openMobile,
-        setOpenMobile,
-        isMobile
-      }}
-    >
-      <div ref={ref} {...props}>
-        {children}
-      </div>
-    </SidebarContext.Provider>
-  );
-});
+const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
+  ({ children, defaultOpen = true, ...props }, ref) => {
+    const [open, setOpen] = React.useState(defaultOpen);
+    const [openMobile, setOpenMobile] = React.useState(false);
+    const isMobile = useIsMobile();
+
+    return (
+      <SidebarContext.Provider
+        value={{
+          open,
+          setOpen,
+          openMobile,
+          setOpenMobile,
+          isMobile
+        }}
+      >
+        <div ref={ref} {...props}>
+          {children}
+        </div>
+      </SidebarContext.Provider>
+    );
+  }
+);
 SidebarProvider.displayName = 'SidebarProvider';
 
 interface SidebarProps extends React.ComponentPropsWithoutRef<'div'> {
