@@ -1,25 +1,31 @@
-import type { ComponentProps } from 'react';
+import * as React from 'react';
 
-import { type SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { SidebarToggle, useSidebar } from './ui/sidebar';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from './ui/tooltip';
 
 import { SidebarLeftIcon } from './icons';
 import { Button } from './ui/button';
 
-export function SidebarToggle({
+export function SidebarToggleButton({
   className,
-}: ComponentProps<typeof SidebarTrigger>) {
-  const { toggleSidebar } = useSidebar();
+}: React.ComponentPropsWithoutRef<any>) {
+  const { open, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          onClick={toggleSidebar}
+          onClick={() => {
+            if (isMobile) {
+              setOpenMobile(!openMobile);
+            } else {
+              setOpen(!open);
+            }
+          }}
           variant="outline"
           className="md:px-2 md:h-fit"
         >
