@@ -4,6 +4,7 @@ import type { Message } from 'ai';
 import { useChat } from 'ai/react';
 import { useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
+import { Send as SendIcon } from 'lucide-react';
 
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -11,7 +12,6 @@ import { fetcher } from '@/lib/utils';
 import { Messages } from './messages';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { SendIcon } from './icons';
 import { VisibilityType } from './visibility-selector';
 
 export function Chat({
