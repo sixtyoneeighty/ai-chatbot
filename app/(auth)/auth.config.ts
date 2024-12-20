@@ -2,7 +2,7 @@ import type { NextAuthConfig } from 'next-auth';
 
 export const authConfig = {
   pages: {
-    signIn: '/login',
+    signIn: '/sign-in',
     newUser: '/',
   },
   providers: [
@@ -14,13 +14,13 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isOnChat = nextUrl.pathname.startsWith('/');
       const isOnRegister = nextUrl.pathname.startsWith('/register');
-      const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const isOnSignIn = nextUrl.pathname.startsWith('/sign-in');
 
-      if (isLoggedIn && (isOnLogin || isOnRegister)) {
+      if (isLoggedIn && (isOnSignIn || isOnRegister)) {
         return Response.redirect(new URL('/', nextUrl as unknown as URL));
       }
 
-      if (isOnRegister || isOnLogin) {
+      if (isOnRegister || isOnSignIn) {
         return true; // Always allow access to register and login pages
       }
 
