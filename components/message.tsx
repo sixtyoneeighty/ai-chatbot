@@ -43,9 +43,9 @@ export function PreviewMessage({
         {!isLoading && !isReadonly && (
           <MessageActions
             chatId={chatId}
-            id={message.id}
+            message={message}
             vote={vote}
-            setMessages={setMessages}
+            isLoading={isLoading}
           />
         )}
       </div>
