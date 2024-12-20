@@ -220,12 +220,14 @@ function SidebarMenu({ children, className, ...props }: SidebarMenuProps) {
 
 interface SidebarMenuActionProps extends React.ComponentPropsWithoutRef<'button'> {
   icon?: React.ReactNode;
+  showOnHover?: boolean;
 }
 
 function SidebarMenuAction({ 
   children,
   className,
   icon,
+  showOnHover,
   ...props 
 }: SidebarMenuActionProps) {
   return (
@@ -233,6 +235,7 @@ function SidebarMenuAction({
       className={cn(
         'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium',
         'hover:bg-accent hover:text-accent-foreground',
+        showOnHover && 'opacity-0 group-hover:opacity-100',
         className
       )}
       {...props}
