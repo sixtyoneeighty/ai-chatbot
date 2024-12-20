@@ -3,8 +3,6 @@ import type { NextAuthConfig } from 'next-auth';
 export const authConfig = {
   pages: {
     signIn: '/login',
-    signOut: '/login',
-    error: '/login',
   },
   providers: [
     // added later in auth.ts since it requires bcrypt which is only compatible with Node.js
@@ -13,26 +11,16 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isAuthPage = nextUrl.pathname.startsWith('/login') || 
-                        nextUrl.pathname.startsWith('/register');
+      const isAuthPage = nextUrl.pathname === '/login' || 
+                        nextUrl.pathname === '/register';
       
-      // Redirect logged-in users away from auth pages
-      if (isLoggedIn && isAuthPage) {
-        return Response.redirect(new URL('/', nextUrl));
-      }
-
-      // Allow access to auth pages
       if (isAuthPage) {
         return true;
       }
 
-      // Require auth for all other pages
       return isLoggedIn;
     },
-    async jwt({ token, user, trigger, session }) {
-      if (trigger === 'update' && session?.name) {
-        token.name = session.name;
-      }
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
       }
