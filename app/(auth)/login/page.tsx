@@ -31,14 +31,20 @@ export default function Page() {
     } else if (state.status === 'success') {
       setIsSuccessful(true);
       router.refresh();
-      router.push('/');
+      setTimeout(() => {
+        router.push('/');
+      }, 500); // Small delay to show success state
     }
   }, [state.status, router]);
 
   const handleSubmit = async (formData: FormData) => {
     try {
       setEmail(formData.get('email') as string);
-      await formAction(formData);
+      const result = await formAction(formData);
+      
+      if (result?.status === 'failed') {
+        toast.error('Invalid credentials!');
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Something went wrong during login');

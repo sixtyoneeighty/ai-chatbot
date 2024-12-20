@@ -3,6 +3,8 @@ import type { NextAuthConfig } from 'next-auth';
 export const authConfig = {
   pages: {
     signIn: '/login',
+    signOut: '/login',
+    error: '/login',
     newUser: '/',
   },
   providers: [
@@ -32,6 +34,15 @@ export const authConfig = {
       }
 
       return true;
+    },
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === 'update' && session?.name) {
+        token.name = session.name;
+      }
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
     },
   },
 } satisfies NextAuthConfig;

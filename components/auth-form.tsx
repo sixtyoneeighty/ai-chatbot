@@ -30,7 +30,7 @@ export function AuthForm({
           className="bg-muted text-md md:text-sm"
           type="email"
           placeholder="user@acme.com"
-          autoComplete="email"
+          autoComplete="username email"
           required
           autoFocus
           defaultValue={defaultEmail}
@@ -50,6 +50,7 @@ export function AuthForm({
           name="password"
           className="bg-muted text-md md:text-sm"
           type="password"
+          autoComplete="current-password"
           required
         />
       </div>
