@@ -25,18 +25,23 @@ export const login = async (
       password: formData.get('password'),
     });
 
-    await signIn('credentials', {
+    const result = await signIn('credentials', {
       email: validatedData.email,
       password: validatedData.password,
       redirect: false,
     });
+
+    if (result?.error) {
+      console.error('Sign in error:', result.error);
+      return { status: 'failed' };
+    }
 
     return { status: 'success' };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { status: 'invalid_data' };
     }
-
+    console.error('Sign in error:', error);
     return { status: 'failed' };
   }
 };
