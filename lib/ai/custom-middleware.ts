@@ -1,7 +1,7 @@
 import type { Experimental_LanguageModelV1Middleware } from 'ai';
 
 export const customMiddleware: Experimental_LanguageModelV1Middleware = {
-  createRequest: (request) => {
+  transformRequest: (request) => {
     return {
       ...request,
       safetySettings: [
