@@ -22,7 +22,13 @@ export const {
       credentials: {},
       async authorize({ email, password }: any) {
         try {
-          console.log('Attempting to authorize user:', email);
+          console.log('Starting authorization for:', email);
+          
+          if (!email || !password) {
+            console.log('Missing credentials');
+            return null;
+          }
+
           const users = await getUser(email);
           console.log('Found users:', users.length);
           
@@ -30,9 +36,15 @@ export const {
             console.log('No user found with email:', email);
             return null;
           }
-          
+
+          const user = users[0];
+          if (!user.password) {
+            console.log('User has no password set');
+            return null;
+          }
+
           // biome-ignore lint: Forbidden non-null assertion.
-          const passwordsMatch = await compare(password, users[0].password!);
+          const passwordsMatch = await compare(password, user.password!);
           console.log('Passwords match:', passwordsMatch);
           
           if (!passwordsMatch) {
@@ -41,10 +53,13 @@ export const {
           }
           
           console.log('Successfully authorized user:', email);
-          return users[0] as any;
+          return {
+            id: user.id,
+            email: user.email,
+          };
         } catch (error) {
           console.error('Authorization error:', error);
-          throw error;
+          return null;
         }
       },
     }),
@@ -71,4 +86,9 @@ export const {
       return session;
     },
   },
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.AUTH_SECRET,
+  debug: true,
 });

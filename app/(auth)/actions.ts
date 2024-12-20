@@ -25,25 +25,42 @@ export const login = async (
   }
 
   try {
+    console.log('Validating form data');
     const validatedData = authFormSchema.parse({
       email: formData.get('email'),
       password: formData.get('password'),
     });
 
+    console.log('Attempting sign in');
     const result = await signIn('credentials', {
       email: validatedData.email,
       password: validatedData.password,
       redirect: false,
+      callbackUrl: '/',
     });
 
-    if (result?.error) {
+    console.log('Sign in result:', result);
+
+    if (!result) {
+      console.error('No result from signIn');
+      return { status: 'failed' };
+    }
+
+    if (result.error) {
       console.error('Sign in error:', result.error);
       return { status: 'failed' };
     }
 
+    if (!result.ok) {
+      console.error('Sign in not ok');
+      return { status: 'failed' };
+    }
+
+    console.log('Sign in successful');
     return { status: 'success' };
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Validation error:', error);
       return { status: 'invalid_data' };
     }
     console.error('Sign in error:', error);
